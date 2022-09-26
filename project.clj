@@ -5,5 +5,5 @@
                  [com.novemberain/monger "3.1.0"]
                  [org.clojure/clojure "1.11.1"]
                  [org.clojure/core.async "0.4.474"]]
-  :main storage
+  :main pcc
   :plugins [[lein-marginalia "0.9.1"]])

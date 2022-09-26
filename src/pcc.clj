@@ -20,14 +20,28 @@
     (s/connect socket socket)
     (invalid-ws-connection)))
 
+;; chatrooms
+(def chatrooms (bus/event-bus))
+
 (defn create-async-websocket-handler [req]
   (println "Got an async websocket connection!")
   (->
+   #_{:clj-kondo/ignore [:unresolved-symbol]}
    (d/let-flow [socket (http/websocket-connection req)]
-               (s/connect socket socket)
-               (s/put-all! socket ["Hello" "World"])
+               (d/let-flow [room (s/take! socket)]
+                          ;; take all messages from the chatroom, and feed them to the client
+                           (s/connect (bus/subscribe chatrooms room) socket)
+                           ;; take all messages from the client, and publish it to the room 
+                           (s/consume #(bus/publish! chatrooms room %)
+                                      (->> socket
+                                           (s/map #(str "text: " %))
+                                           (s/buffer 100))))
                nil)
    (d/catch (fn [_] invalid-ws-connection))))
+
+(defn create-chat-room [req] (println "Creating chat room!"))
+
+(defn join-chat-room [req] (println "Joining chat room!"))
 
 (def handler
   (params/wrap-params
